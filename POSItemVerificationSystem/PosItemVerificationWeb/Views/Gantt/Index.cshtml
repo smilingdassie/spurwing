@@ -1,0 +1,229 @@
+﻿<!-- Views/Gantt/Index.cshtml -->
+@model PosItemVerificationWeb.ViewModels.GanttChartViewModel
+
+@{
+    ViewData["Title"] = "Gantt Chart";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-gantt"></i> Restaurant Opening Gantt Chart</h1>
+    <div class="d-flex gap-2">
+        <select id="restaurantFilter" class="form-select" style="width: 300px;">
+            <option value="">Select Restaurant...</option>
+            @foreach (var restaurant in Model.Restaurants)
+            {
+                <option value="@restaurant.RestaurantKey" @@(restaurant.RestaurantKey == Model.RestaurantKey ? "selected" : "")>
+                    @restaurant.RestaurantName (@restaurant.DCLink)
+                </option>
+            }
+        </select>
+        <button id="refreshChart" class="btn btn-outline-primary">
+            <i class="fas fa-refresh"></i> Refresh
+        </button>
+    </div>
+</div>
+
+@if (Model.RestaurantKey > 0)
+{
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-store"></i> @Model.RestaurantName
+                <span class="badge bg-info ms-2">@Model.Tasks.Count tasks</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div id="ganttChart" style="height: 600px; overflow-x: auto;">
+                <canvas id="ganttCanvas"></canvas>
+            </div>
+
+            <div class="mt-4">
+                <h6>Legend:</h6>
+                <div class="d-flex flex-wrap gap-3">
+                    <span><span class="badge bg-danger"></span> Critical Path</span>
+                    <span><span class="badge bg-success"></span> Completed</span>
+                    <span><span class="badge bg-warning"></span> In Progress</span>
+                    <span><span class="badge bg-secondary"></span> Not Started</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Critical Path Tasks</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Department</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var task in Model.Tasks.Where(t => t.IsCriticalPath))
+                                {
+                                    <tr>
+                                        <td>@task.TaskName</td>
+                                        <td><span class="badge bg-info">@task.Department</span></td>
+                                        <td>@task.Duration days</td>
+                                        <td>
+                                            @{
+                                                var statusClass = task.Status switch
+                                                {
+                                                    "Completed" => "bg-success",
+                                                    "In Progress" => "bg-warning",
+                                                    "Not Started" => "bg-secondary",
+                                                    _ => "bg-secondary"
+                                                };
+                                            }
+                                            <span class="badge @statusClass">@task.Status</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-chart-pie"></i> Progress by Department</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="departmentChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-gantt fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Select a Restaurant</h4>
+            <p class="text-muted">Choose a restaurant from the dropdown above to view its opening progress.</p>
+        </div>
+    </div>
+}
+
+
+
+@section Scripts {
+    
+    <script>
+        // Wait for all scripts to load before initializing charts
+        window.addEventListener('load', function() {
+            // Double-check that Chart is available
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js failed to load');
+                return;
+            }
+
+            console.log('Chart.js loaded successfully');
+
+            let ganttChart = null;
+            let departmentChart = null;
+
+            $('#restaurantFilter').change(function() {
+                const restaurantKey = $(this).val();
+                if (restaurantKey) {
+                    window.location.href = '/Gantt?restaurantKey=' + restaurantKey;
+                } else {
+                    window.location.href = '/Gantt';
+                }
+            });
+
+            $('#refreshChart').click(function() {
+                const restaurantKey = $('#restaurantFilter').val();
+                if (restaurantKey) {
+                    loadGanttData(restaurantKey);
+                }
+            });
+
+            // Load initial data
+            loadGanttData(4);
+            loadDepartmentChart();
+
+            function loadGanttData(restaurantKey) {
+                $.get('/Gantt/GetGanttData', { restaurantKey: restaurantKey })
+                    .done(function(data) {
+                        createGanttChart(data);
+                    })
+                    .fail(function() {
+                        alert('Error loading Gantt data');
+                    });
+            }
+
+            function createGanttChart(tasks) {
+                const ctx = document.getElementById('ganttCanvas').getContext('2d');
+
+                if (ganttChart) {
+                    ganttChart.destroy();
+                }
+
+                // Your existing chart creation code...
+                ganttChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: tasks.map(t => t.taskName),
+                        datasets: [{
+                            label: 'Task Timeline',
+                            data: tasks.map(task => task.duration),
+                            backgroundColor: tasks.map(task => getTaskColor(task))
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            function getTaskColor(task) {
+                switch (task.status) {
+                    case 'Completed': return '#28a745';
+                    case 'In Progress': return '#ffc107';
+                    case 'Not Started': return '#6c757d';
+                    default: return '#6c757d';
+                }
+            }
+
+            function loadDepartmentChart() {
+                // Your existing department chart code...
+                const ctx = document.getElementById('departmentChart').getContext('2d');
+
+                if (departmentChart) {
+                    departmentChart.destroy();
+                }
+
+                departmentChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Development', 'Legal', 'IT', 'Finance', 'Marketing', 'Procurement', 'Training'],
+                        datasets: [{
+                            data: [0, 0, 0, 0, 0, 0, 0],
+                            backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#20c997']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        });
+    </script>
+}
+

@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Select Restaurant";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-building" style="font-size: 4rem; color: #0d6efd;"></i>
+                    </div>
+                    <h2 class="mb-3">Select a Restaurant</h2>
+                    <p class="text-muted mb-4">Choose a restaurant to view and manage its opening event progress</p>
+
+                    <form method="get">
+                        <div class="mb-4">
+                            <select name="restaurantKey" class="form-select form-select-lg" required>
+                                <option value="">-- Select Restaurant --</option>
+                                @foreach (var item in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Restaurants)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg px-5">
+                            <i class="bi bi-arrow-right-circle me-2"></i>View Events
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .card {
+            border-radius: 15px;
+        }
+    </style>
+}

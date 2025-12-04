@@ -1,0 +1,230 @@
+﻿@model IEnumerable<PosItemVerificationWeb.ViewModels.RestaurantDashboardViewModel>
+
+@{
+    ViewData["Title"] = "Restaurant Opening Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-1">Restaurant Opening Dashboard</h2>
+            <p class="text-muted">Overview of all restaurant opening progress</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="@Url.Action("Index", "RestaurantEvents")" class="btn btn-outline-primary">
+                <i class="bi bi-list-task me-2"></i>Manage Events
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-2">
+                        <i class="bi bi-building" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="mb-0">@Model.Count()</h3>
+                    <p class="text-muted mb-0">Total Restaurants</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="mb-0">@Model.Count(r => r.CompletionPercentage == 100)</h3>
+                    <p class="text-muted mb-0">Fully Complete</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="mb-0">@Model.Count(r => r.InProgressEvents > 0)</h3>
+                    <p class="text-muted mb-0">In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="text-muted mb-2">
+                        <i class="bi bi-circle" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="mb-0">@Model.Count(r => r.CompletedEvents == 0)</h3>
+                    <p class="text-muted mb-0">Not Started</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant List -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4 py-3">Restaurant</th>
+                            <th class="py-3">Brand</th>
+                            <th class="py-3">Target Opening</th>
+                            <th class="py-3 text-center">Progress</th>
+                            <th class="py-3" style="min-width: 400px;">Event Status (RAG)</th>
+                            <th class="py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var restaurant in Model)
+                        {
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <div>
+                                        <strong class="d-block">@restaurant.RestaurantName</strong>
+                                        <small class="text-muted">@restaurant.DCLink</small>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-secondary">@restaurant.BrandName</span>
+                                </td>
+                                <td class="py-3 text-muted small">
+                                    @if (restaurant.TargetOpeningDate.HasValue)
+                                    {
+                                        @restaurant.TargetOpeningDate.Value.ToString("MMM dd, yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span>—</span>
+                                    }
+                                </td>
+                                <td class="py-3 text-center">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <strong class="mb-1" style="font-size: 1.1rem;">@restaurant.CompletionPercentage%</strong>
+                                        <small class="text-muted">@restaurant.CompletedEvents/@restaurant.TotalEvents</small>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <div class="rag-container d-flex gap-1" title="Event completion status">
+                                        @foreach (var eventStatus in restaurant.EventStatuses.OrderBy(x=>int.Parse(x.EventCode??"0")))
+                                        {
+                                            <div class="rag-square rag-@eventStatus.RagStatus.ToLower()"
+                                                 data-bs-toggle="tooltip"
+                                                 data-bs-placement="top"
+                                                 title="@eventStatus.EventCode: @eventStatus.EventName - @eventStatus.Status">
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="mt-2 d-flex gap-2 small">
+                                        <span class="text-success">
+                                            <i class="bi bi-square-fill"></i> @restaurant.CompletedEvents
+                                        </span>
+                                        <span class="text-warning">
+                                            <i class="bi bi-square-fill"></i> @restaurant.InProgressEvents
+                                        </span>
+                                        <span class="text-danger">
+                                            <i class="bi bi-square-fill"></i> @restaurant.PendingEvents
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <a href="@Url.Action("Index", "RestaurantEvents", new { restaurantKey = restaurant.RestaurantKey })"
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-arrow-right-circle me-1"></i>View Details
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .card {
+            border: none;
+            border-radius: 8px;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+            .table tbody tr:hover {
+                background-color: #f8f9fa;
+            }
+
+        /* RAG Squares */
+        .rag-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .rag-square {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+            .rag-square:hover {
+                transform: scale(1.2);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                z-index: 10;
+            }
+
+            .rag-square.rag-green {
+                background-color: #28a745;
+            }
+
+            .rag-square.rag-amber {
+                background-color: #ffc107;
+            }
+
+            .rag-square.rag-red {
+                background-color: #dc3545;
+            }
+
+        .btn-sm {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+        }
+
+        .badge {
+            padding: 0.35em 0.65em;
+            font-weight: 500;
+        }
+    </style>
+}

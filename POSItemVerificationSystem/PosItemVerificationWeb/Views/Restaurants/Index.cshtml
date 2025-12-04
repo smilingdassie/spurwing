@@ -1,0 +1,99 @@
+﻿<!-- Views/Restaurants/Index.cshtml -->
+@model IEnumerable<PosItemVerificationWeb.Models.Restaurant>
+
+@{
+    ViewData["Title"] = "Restaurants";
+ 
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-building"></i> Restaurants</h1>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add New Restaurant
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>@Html.DisplayNameFor(model => model.DCLink)</th>
+                        <th>@Html.DisplayNameFor(model => model.RestaurantName)</th>
+                        <th>@Html.DisplayNameFor(model => model.BrandName)</th>
+                        <th>@Html.DisplayNameFor(model => model.City)</th>
+                        <th>@Html.DisplayNameFor(model => model.TargetOpeningDate)</th>
+                        <th>@Html.DisplayNameFor(model => model.ActualOpeningDate)</th>
+                        <th>@Html.DisplayNameFor(model => model.Status)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <code>@Html.DisplayFor(modelItem => item.DCLink)</code>
+                            </td>
+                            <td>@Html.DisplayFor(modelItem => item.RestaurantName)</td>
+                            <td>
+                                <span class="badge bg-info">@Html.DisplayFor(modelItem => item.BrandName)</span>
+                            </td>
+                            <td>@Html.DisplayFor(modelItem => item.City)</td>
+                            <td>
+                                @if (item.TargetOpeningDate.HasValue)
+                                {
+                                    <span class="text-warning">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        @item.TargetOpeningDate.Value.ToString("MMM dd, yyyy")
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.ActualOpeningDate.HasValue)
+                                {
+                                    <span class="text-success">
+                                        <i class="fas fa-check-circle"></i>
+                                        @item.ActualOpeningDate.Value.ToString("MMM dd, yyyy")
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var statusClass = item.Status switch
+                                    {
+                                        "Planning" => "bg-secondary",
+                                        "In Progress" => "bg-warning",
+                                        "Completed" => "bg-success",
+                                        "On Hold" => "bg-danger",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @statusClass">@Html.DisplayFor(modelItem => item.Status)</span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a asp-action="Details" asp-route-id="@item.RestaurantKey" class="btn btn-outline-info btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-controller="Gantt" asp-action="Index" asp-route-restaurantKey="@item.RestaurantKey" class="btn btn-outline-primary btn-sm" title="View Gantt">
+                                        <i class="fas fa-chart-gantt"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.RestaurantKey" class="btn btn-outline-warning btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.RestaurantKey" class="btn btn-outline-danger btn-sm" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,6 @@
+@ResendEmailApi_HostAddress = http://localhost:5118
+
+GET {{ResendEmailApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

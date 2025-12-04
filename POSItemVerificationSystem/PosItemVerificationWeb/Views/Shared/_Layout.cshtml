@@ -1,0 +1,179 @@
+﻿<!-- Views/Shared/_Layout.cshtml -->
+@using Microsoft.Extensions.Options
+@inject IOptions<AllowedUsersConfig> AllowedUsers
+@using PosItemVerificationWeb.Helpers  <!-- wherever you put UserExtensions -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SpurWing</title>
+
+    <!-- Bootstrap CSS -->
+
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="~/lib/tabulator/tabulator_bootstrap5.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <style>
+        body {
+        background-color: #f8f9fa;
+        }
+
+        .navbar-brand {
+        font-weight: 600;
+        font-size: 1.25rem;
+        }
+
+        .nav-link {
+        font-weight: 500;
+        transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+        color: rgba(255,255,255,0.8) !important;
+        }
+
+        .nav-link.active {
+        color: #fff !important;
+        background-color: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        }
+
+        .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .table th {
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        }
+
+        .table-hover tbody tr:hover td {
+        background-color: rgba(0,123,255,0.1);
+        }
+
+        .btn-group .btn {
+        margin-right: 0;
+        }
+    </style>
+    <link href="~/css/spurcorp.webapp.styles.css" rel="stylesheet" />
+    @RenderSection("Styles", required: false)
+
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-primary border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+
+
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                    <i class="fas fa-fighter-jet"></i> SpurWing
+
+
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-light @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")"
+                            href="@Url.Action("Index", "Home")">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+
+                            var user = User.NormalizedName();
+
+                            if (AllowedUsers.Value.DashboardList.Contains(user))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-light @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")"
+                                    href="@Url.Action("Index", "Dashboard")">
+                                        <i class="fas fa-home"></i> Dashboard
+                                    </a>
+                                </li>
+                            }
+                            if (AllowedUsers.Value.SensitiveList.Contains(user))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-light @(ViewContext.RouteData.Values["controller"]?.ToString() == "Restaurants" ? "active" : "")"
+                                    href="@Url.Action("Dashboard", "RestaurantEvents")">
+                                        <i class="fas fa-building"></i> Restaurants
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light @(ViewContext.RouteData.Values["controller"]?.ToString() == "Tasks" ? "active" : "")"
+                                    href="@Url.Action("Index", "Tasks")">
+                                        <i class="fas fa-tasks"></i> Tasks
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light @(ViewContext.RouteData.Values["controller"]?.ToString() == "Gantt" ? "active" : "")"
+                                    href="@Url.Action("Index", "Gantt")">
+                                        <i class="fas fa-chart-gantt"></i> Gantt Chart
+                                    </a>
+                                </li>
+                            }
+                            if (AllowedUsers.Value.POSItemList.Contains(user))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-light @(ViewContext.RouteData.Values["controller"]?.ToString() == "POSVerification" ? "active" : "")"
+                                    href="@Url.Action("Index", "POSItemVerification")">
+                                        <i class="fas fa-basket-shopping"></i> POS Item Verification
+                                    </a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                    <partial name="_LoginPartial" />
+
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-5">
+        <div class="container text-center">
+        <img title="Mohawk Pinto Spurwing 1928" alt="Mohawk Pinto Spurwing 1928" width="10%" src="~/images/mohawk_pinto_3-view_le_document_aéronautique_april,1928.png" />
+        
+            &copy; 2025 - Spur Corporation
+        </div>
+    </footer>
+
+
+    <!-- In the <head> section OR before closing </body> -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/tabulator/tabulator.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

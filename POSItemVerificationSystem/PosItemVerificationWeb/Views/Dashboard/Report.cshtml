@@ -1,0 +1,110 @@
+﻿@{
+    ViewData["Title"] = "Dynamic SQL Tabulator";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model SqlQueryResult
+
+<!-- Tabulator CSS -->
+ 
+<link href="~/lib/tabulator-6.3.1/dist/css/tabulator.min.css" rel="stylesheet" />
+<div class="container mt-4">
+    <form id="queryForm">
+        <div class="form-group mb-3">
+            <label>Select Server-Database:</label>
+            <select id="selectedDatabase" name="SelectedServerDatabase" class="form-control">
+                <option value="">-- Select Server-Database --</option>
+                @foreach (var db in Model.ServerDatabases)
+                {
+                    <option value="@db">@db</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group mb-3">
+            <label>SQL Query:</label>
+            <textarea id="query" name="Query" rows="5" class="form-control"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Execute Query</button>
+    </form>
+
+    <div id="error" class="alert alert-danger mt-3 d-none"></div>
+
+    <div id="table-container" class="mt-4"></div>
+</div>
+
+@section Scripts {
+    
+    <script src="~/lib/tabulator-6.3.1/dist/js/tabulator.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            console.log("✅ Script loaded");
+
+            $("#queryForm").on("submit", function (e) {
+                e.preventDefault(); // NOW this will work because form has id="queryForm"
+                console.log("Form submitted via AJAX");
+
+                $("#error").addClass("d-none");
+                $("#table-container").html("");
+
+                const selectedDb = $("#selectedDatabase").val();
+                const query = $("#query").val();
+
+                if (!selectedDb) {
+                    $("#error").text("Please select a server-database").removeClass("d-none");
+                    return;
+                }
+
+                if (!query.trim()) {
+                    $("#error").text("Please enter a SQL query").removeClass("d-none");
+                    return;
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("Index")", // or create a new action like "ExecuteQuery"
+                    data: {
+                        SelectedServerDatabase: selectedDb,
+                        Query: query
+                    },
+                    success: function (data) {
+                        if (data.error) {
+                            $("#error").text(data.error).removeClass("d-none");
+                            return;
+                        }
+
+                        // Destroy previous table
+                        if (window.table) {
+                            window.table.destroy();
+                        }
+
+                        // Add filters to columns
+                        const columns = data.columns.map(col => ({
+                            title: col.title,
+                            field: col.field,
+                            headerFilter: "input",
+                            headerFilterPlaceholder: "Filter " + col.title
+                        }));
+
+                        // Create Tabulator
+                        window.table = new Tabulator("#table-container", {
+                            layout: "fitDataStretch",
+                            pagination: true,
+                            paginationSize: 25,
+                            paginationSizeSelector: [10, 25, 50, 100],
+                            columns: columns,
+                            data: data.rows,
+                            placeholder: "No results found",
+                            height: "500px"
+                        });
+
+                        console.log("✅ Table created with " + data.rows.length + " rows");
+                    },
+                    error: function (xhr) {
+                        $("#error").text("Error: " + (xhr.responseText || xhr.statusText)).removeClass("d-none");
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,541 @@
+﻿@model List<PosItemVerificationWeb.Models.POSVerificationGroup>
+@{
+    ViewData["Title"] = "Collect Alert - Verify POSName Change";
+    var summary = ViewBag.Summary as PosItemVerificationWeb.Models.POSVerificationSummary;
+   // Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .table-container {
+            max-height: 70vh;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 10;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .brand-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .status-active {
+            color: #198754;
+        }
+
+        .status-inactive {
+            color: #dc3545;
+        }
+
+        .status-posdeleted {
+            color: #dc3545;
+            text-decoration: line-through;
+            font-weight: bold;
+        }
+
+        .price-display {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .action-required {
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+            }
+        }
+
+        .posdeleted-item {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 6px;
+            margin: 3px 0;
+            border-radius: 3px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    @* <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-store"></i>Collect Alert - Verify POSName Change</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text"><i class="fas fa-user"></i> Dashboard</span>
+            </div>
+        </div>
+    </nav> *@
+
+    <div class="container-fluid mt-4">
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> @ViewBag.Error
+            </div>
+        }
+        <div id="messages"></div>
+        <!-- Summary Card -->
+        @if (summary != null)
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card summary-card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <h5><i class="fas fa-clipboard-check"></i> Items Requiring Action</h5>
+                                    <h2>@summary.TotalGroups</h2>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6><i class="fas fa-clock"></i> Generated At</h6>
+                                    <p>@summary.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <h6><i class="fas fa-server"></i> Source</h6>
+                                    <p>ETLSQL01\ETL - Collect_Item</p>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-light btn-lg" onclick="submitAllActions()">
+                                        <i class="fas fa-paper-plane"></i> Submit All Actions
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Main Verification Interface -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-edit"></i> Collect Alert - Verify POSName Change</h4>
+                        <p class="mb-0 mt-2">Please verify the SyncAction for each POSItem with a name change</p>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-container">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Action</th>
+                                        <th>Brand</th>
+                                        <th>POS Code</th>
+                                        <th>Item Names</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Last Sale</th>
+                                        <th>Sync Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var group in Model)
+                                    {
+                                        <tr data-audit-key="@group.AuditKey" class="@(group.SelectedAction == "Create New" ? "action-required" : "")">
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-info" onclick="showItemDetails('@group.AuditKey')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary brand-badge">@group.Brand</span>
+                                            </td>
+                                            <td><strong>@group.POSCode</strong></td>
+                                            <td>
+                                                <div class="mb-1">
+                                                    <small class="text-muted">Old:</small> @(group.Current?.POSName ?? "")
+                                                </div>
+                                                <div class="mb-1">
+                                                    <small class="text-success">New:</small> <strong>@(group.NewUpdate?.POSName ?? "")</strong>
+                                                </div>
+                                                @if (group.HasPOSDeleted)
+                                                {
+                                                    <div class="posdeleted-item">
+                                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                                        <strong>POSDeleted:</strong> @group.POSDeletedItem.POSName<br>
+                                                        <small>ItemKey: @group.POSDeletedItem.POSItemKey | Last Sale: @group.POSDeletedItem.LastRecordedSale | Status: <span class="status-posdeleted">POSDeleted</span></small>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">@(group.NewUpdate?.POSDTAB ?? group.Current?.POSDTAB ?? "")</span>
+                                            </td>
+                                            <td class="price-display">@($"R{group.CurrentPrice:F2}")</td>
+                                            <td>
+                                                <span class="status-@(group.Status.ToLower())">@group.Status</span>
+                                                @if (group.HasPOSDeleted)
+                                                {
+                                                    <br>
+
+                                                    <small class="text-danger"><i class="fas fa-trash"></i> Has POSDeleted</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small>@(group.LastSaleDate?.ToString("yyyy-MM-dd") ?? "")</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn @(group.SelectedAction == "Update" ? "btn-primary" : "btn-outline-primary")"
+                                                            onclick="selectAction('@group.AuditKey', 'Update')">
+                                                        Update
+                                                    </button>
+                                                    <button class="btn @(group.SelectedAction == "Create New" ? "btn-success" : "btn-outline-success")"
+                                                            onclick="selectAction('@group.AuditKey', 'Create New')">
+                                                        Create New
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Summary -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-list-check"></i> Action Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="actionSummary">
+                            @if (summary != null)
+                            {
+                                <div class="col-md-3">
+                                    <div class="card border-primary">
+                                        <div class="card-body text-center">
+                                            <h5 class="text-primary" id="updateCount">@summary.UpdateActions</h5>
+                                            <p class="mb-0">Items to Update</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-success">
+                                        <div class="card-body text-center">
+                                            <h5 class="text-success" id="createCount">@summary.CreateNewActions</h5>
+                                            <p class="mb-0">Items to Create New</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-warning">
+                                        <div class="card-body text-center">
+                                            <h5 class="text-warning">@summary.ItemsWithPOSDeleted</h5>
+                                            <p class="mb-0">Items with POSDeleted</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-info">
+                                        <div class="card-body text-center">
+                                            <h5 class="text-info">@summary.TotalGroups</h5>
+                                            <p class="mb-0">Total Items</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Item Details -->
+    <div class="modal fade" id="itemDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Item Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Detail content will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedActions = {};
+
+        // Initialize selected actions from the model
+        @foreach (var group in Model)
+        {
+            <text>selectedActions['@group.AuditKey'] = '@group.SelectedAction';</text>
+        }
+
+        function selectAction(auditKey, action) {
+            selectedActions[auditKey] = action;
+
+            // Update the UI
+            const row = document.querySelector(`tr[data-audit-key="${auditKey}"]`);
+            const buttons = row.querySelectorAll('.btn-group button');
+
+            buttons.forEach(btn => {
+                if (btn.textContent.trim() === action) {
+                    btn.className = btn.className.replace('btn-outline-', 'btn-');
+                } else {
+                    btn.className = btn.className.replace('btn-primary', 'btn-outline-primary')
+                                              .replace('btn-success', 'btn-outline-success');
+                }
+            });
+
+            // Add/remove action-required class
+            if (action === 'Create New') {
+                row.classList.add('action-required');
+            } else {
+                row.classList.remove('action-required');
+            }
+
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const updateCount = Object.values(selectedActions).filter(a => a === 'Update').length;
+            const createCount = Object.values(selectedActions).filter(a => a === 'Create New').length;
+
+            document.getElementById('updateCount').textContent = updateCount;
+            document.getElementById('createCount').textContent = createCount;
+        }
+
+        function showItemDetails(auditKey) {
+            // Find the group data from the model
+        @foreach (var group in Model)
+        {
+            <text>
+                        if (auditKey === '@group.AuditKey') {
+                            showItemDetailsModal({
+                                auditKey: '@group.AuditKey',
+                                brand: '@group.Brand',
+                                posCode: '@group.POSCode',
+                                newName: '@Html.Raw(Json.Serialize(group.NewUpdate?.POSName ?? ""))',
+                                currentName: '@Html.Raw(Json.Serialize(group.Current?.POSName ?? ""))',
+                                category: '@Html.Raw(Json.Serialize(group.NewUpdate?.POSDTAB ?? group.Current?.POSDTAB ?? ""))',
+                                    price: '@group.CurrentPrice.ToString("F2")',
+                                status: '@group.Status',
+                                lastSale: '@(group.LastSaleDate?.ToString("yyyy-MM-dd") ?? "")',
+                                hasPOSDeleted: '@(group.HasPOSDeleted ? "true" : "false")',
+                                posDeletedItem: '@(group.HasPOSDeleted ? Html.Raw(Json.Serialize(new { name = group.POSDeletedItem.POSName, itemKey = group.POSDeletedItem.POSItemKey, lastSale = group.POSDeletedItem.LastRecordedSale })) : "null")',
+                                selectedAction: selectedActions[auditKey]
+                            })
+                        }
+            </text>
+        }
+        }
+
+                // In your view, after successful submission:
+       
+
+        function showItemDetailsModal(item) {
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Item Information</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Brand:</strong></td><td>${item.brand}</td></tr>
+                            <tr><td><strong>POS Code:</strong></td><td>${item.posCode}</td></tr>
+                            <tr><td><strong>Category:</strong></td><td>${item.category}</td></tr>
+                            <tr><td><strong>Price:</strong></td><td>R${item.price}</td></tr>
+                            <tr><td><strong>Status:</strong></td><td>${item.status}</td></tr>
+                            <tr><td><strong>Last Sale:</strong></td><td>${item.lastSale}</td></tr>
+                        </table>
+                        ${item.hasPOSDeleted ? `
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> POSDeleted Entry Found</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm mb-0">
+                                    <tr><td><strong>Name:</strong></td><td class="text-danger">${item.posDeletedItem.name}</td></tr>
+                                    <tr><td><strong>ItemKey:</strong></td><td>${item.posDeletedItem.itemKey}</td></tr>
+                                    <tr><td><strong>Last Sale:</strong></td><td>${item.posDeletedItem.lastSale}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Name Changes</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <p><strong>From:</strong><br><span class="text-muted">${item.currentName}</span></p>
+                                <p><strong>To:</strong><br><span class="text-success">${item.newName}</span></p>
+                                ${item.hasPOSDeleted ? `
+                                <div class="alert alert-warning">
+                                    <strong>Note:</strong> This POS code previously had a deleted item.
+                                    Consider if "Create New" action is more appropriate.
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6>Selected Action</h6>
+                            <span class="badge bg-${item.selectedAction === 'Create New' ? 'success' : 'primary'} fs-6">
+                                ${item.selectedAction}
+                            </span>
+                            ${item.hasPOSDeleted && item.selectedAction === 'Update' ? `
+                            <div class="mt-2">
+                                <small class="text-warning">
+                                    <i class="fas fa-info-circle"></i>
+                                    Warning: There's a POSDeleted entry that might conflict
+                                </small>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            new bootstrap.Modal(document.getElementById('itemDetailModal')).show();
+        }
+
+        async function submitAllActions() {
+            const actions = Object.entries(selectedActions).map(([auditKey, action]) => {
+                // Find the brand and POS code for this audit key
+                const row = document.querySelector(`tr[data-audit-key="${auditKey}"]`);
+                const brand = row.querySelector('.brand-badge').textContent;
+                const posCode = row.querySelector('td:nth-child(3) strong').textContent;
+
+                return {
+                    auditKey: auditKey,
+                    brand: brand,
+                    posCode: posCode,
+                    action: action
+                };
+            });
+
+            const request = {
+                actions: actions,
+                emailAddress: ''
+            };
+
+            try {
+                const response = await fetch('/POSVerification/SubmitActions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(request)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Successfully submitted ${actions.length} actions:\n` +
+                          `- ${actions.filter(a => a.action === 'Update').length} Updates\n` +
+                          `- ${actions.filter(a => a.action === 'Create New').length} Create New\n\n`  );
+                    handleSubmissionSuccess(result);
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            }
+        }
+
+
+         function handleSubmissionSuccess(result) {
+             debugger;
+            if (result.success && result.sessionId) {
+                // Store session ID for potential rollback
+                sessionStorage.setItem('lastSubmissionSessionId', result.sessionId);
+
+                // Show rollback option
+                showRollbackOption(result.sessionId);
+            }
+        }
+
+        function showRollbackOption(sessionId) {
+            const rollbackHtml = `
+                <div class="alert alert-info mt-3" id="rollbackAlert">
+                    <strong>Changes submitted successfully!</strong>
+                    <button class="btn btn-warning btn-sm ms-3" onclick="rollbackChanges('${sessionId}')">
+                        <i class="fas fa-undo"></i> Undo All Changes
+                    </button>
+                </div>
+            `;
+            document.getElementById('messages').innerHTML = rollbackHtml;
+        }
+
+        async function rollbackChanges(sessionId) {
+            if (!confirm('Are you sure you want to undo all changes? This cannot be reversed.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/POSVerification/RollbackActions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: sessionId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Changes rolled back successfully!');
+                    location.reload(); // Refresh to show original state
+                } else {
+                    alert('Rollback failed: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error during rollback: ' + error.message);
+            }
+        }
+
+
+        // Initialize summary on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSummary();
+        });
+    </script>
+</body>
+</html>

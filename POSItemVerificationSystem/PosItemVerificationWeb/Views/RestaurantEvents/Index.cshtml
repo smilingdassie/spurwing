@@ -1,0 +1,422 @@
+﻿@model IEnumerable<PosItemVerificationWeb.ViewModels.VwRestaurantEventProgress>
+@using System.Linq
+@using PosItemVerificationWeb.Models;
+@{
+    ViewData["Title"] = "Restaurant Event Progress";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var executions = ViewBag.Executions as List<RestaurantEventExecution>;
+    var allEvents = ViewBag.AllEvents as List<RestaurantEvent>;
+    var restaurant = PosItemVerificationWeb.ViewModels.RestaurantDashboardViewModel.FromEntity(ViewBag.SelectedRestaurant as PosItemVerificationWeb.Models.Restaurant, executions, allEvents);
+    var restaurantKey = ViewBag.SelectedRestaurantKey as int?;
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-1">Restaurant Opening Events</h2>
+            <p class="text-muted">Track progress for restaurant opening checklist</p>
+        </div>
+        <div class="col-md-4">
+            <form method="get" id="restaurantSelectForm">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="bi bi-building"></i>
+                    </span>
+                    <select name="restaurantKey" class="form-select" id="restaurantSelect" onchange="this.form.submit()">
+                        <option value="">-- Select Restaurant --</option>
+                        @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.Restaurants)
+                        {
+                            <option value="@item.Value" selected="@(item.Value == restaurantKey?.ToString())">@item.Text</option>
+                        }
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (restaurant != null)
+    {
+        <!-- Restaurant Info Card -->
+        <div class="card mb-4 border-primary shadow-sm">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h4 class="mb-1 text-primary">@restaurant.RestaurantName</h4>
+                        <div class="d-flex gap-3 text-muted small">
+                            <span><i class="bi bi-link-45deg me-1"></i>DC Link: <strong>@restaurant.DCLink</strong></span>
+                            <span><i class="bi bi-tag me-1"></i>Brand: <strong>@restaurant.BrandName</strong></span>
+                            @if (restaurant.TargetOpeningDate.HasValue)
+                            {
+                                <span><i class="bi bi-calendar-event me-1"></i>Target Opening: <strong>@restaurant.TargetOpeningDate.Value.ToString("MMM dd, yyyy")</strong></span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="rag-container d-flex gap-1" title="Event completion status">
+                            @foreach (var eventStatus in restaurant.EventStatuses.OrderBy(x => int.Parse(x.EventCode ?? "0")))
+                            {
+                                <div class="rag-square rag-@eventStatus.RagStatus.ToLower()"
+                                     data-bs-toggle="tooltip"
+                                     data-bs-placement="top"
+                                     title="@eventStatus.EventCode: @eventStatus.EventName - @eventStatus.Status">
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-2 d-flex gap-2 small">
+                            <span class="text-success">
+                                <i class="bi bi-square-fill"></i> @restaurant.CompletedEvents
+                            </span>
+                            <span class="text-warning">
+                                <i class="bi bi-square-fill"></i> @restaurant.InProgressEvents
+                            </span>
+                            <span class="text-danger">
+                                <i class="bi bi-square-fill"></i> @restaurant.PendingEvents
+                            </span>
+                        </div>
+                    </div>
+                   @*  <div class="col-md-2 text-end">
+                        @{
+                            var completed = Model.Count(e => e.ExecutionStatus == "Completed");
+                            var total = Model.Count();
+                            var percentage = total > 0 ? (completed * 100 / total) : 0;
+                        }
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @percentage%;" aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100">
+                                @completed / @total Complete (@percentage%)
+                            </div>
+                        </div>
+                       
+                    </div> *@
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Table -->
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4 py-3">Event</th>
+                                <th class="py-3">Description</th>
+                                <th class="py-3">Action</th>
+                                <th class="py-3 text-center">Status</th>
+                                <th class="py-3">Started</th>
+                                <th class="py-3">Completed</th>
+                                <th class="py-3">Completed By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ToList().OrderBy(a=>int.Parse(a.EventCode??"0")))
+                            {
+                                <tr class="@(item.ExecutionStatus == "Completed" ? "table-success-subtle" : "")">
+                                    <td class="px-4 py-3">
+                                        <div>
+                                            <span class="badge bg-primary me-2">@item.EventCode</span>
+                                            <strong>@item.EventName</strong>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 text-muted small">
+                                        @item.EventDescription
+                                    </td>
+                                    <td class="py-3">
+                                        @if (!string.IsNullOrEmpty(item.ActionName))
+                                        {
+                                            @if (item.ExecutionStatus == "Completed")
+                                            {
+                                                <button type="button" class="btn btn-sm btn-success" disabled>
+                                                    <i class="bi bi-check-circle me-1"></i>@item.ActionName
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary action-btn"
+                                                        data-restaurant-key="@item.RestaurantKey"
+                                                        data-event-id="@item.EventID"
+                                                        data-execution-id="@item.ExecutionID"
+                                                        data-action-name="@item.ActionName"
+                                                        data-event-name="@item.EventName">
+                                                    <i class="bi bi-play-circle me-1"></i>@item.ActionName
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td class="py-3 text-center">
+                                        @switch (item.ExecutionStatus)
+                                        {
+                                            case "Completed":
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>Completed
+                                                </span>
+                                                break;
+                                            case "In Progress":
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-hourglass-split me-1"></i>In Progress
+                                                </span>
+                                                break;
+                                            case "Skipped":
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-skip-forward me-1"></i>Skipped
+                                                </span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-light text-dark">
+                                                    <i class="bi bi-circle me-1"></i>Pending
+                                                </span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="py-3 small text-muted">
+                                        @(item.StartedDate?.ToString("MMM dd, yyyy") ?? "—")
+                                    </td>
+                                    <td class="py-3 small text-muted">
+                                        @(item.CompletedDate?.ToString("MMM dd, yyyy") ?? "—")
+                                    </td>
+                                    <td class="py-3 small">
+                                        @(item.CompletedBy ?? "—")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="actionToast" class="toast text-white bg-success" role="alert">
+        <div class="toast-body"></div>
+    </div>
+</div>
+
+
+<!-- Action Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="actionModalLabel">Execute Action</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">You are about to execute: <strong id="modalActionName"></strong></p>
+                <p class="text-muted small mb-3">For event: <span id="modalEventName"></span></p>
+
+                <div id="modalFormContent">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Action-specific form fields will appear here
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="executeActionBtn">Execute</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+                function showToast(message) {
+            const toastEl = document.getElementById('actionToast');
+            toastEl.querySelector('.toast-body').innerText = message;
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+
+
+
+
+        $(document).ready(function() {
+            let currentRestaurantKey = null;
+            let currentEventId = null;
+            let currentExecutionId = null;
+            let currentActionName = null;
+
+            // Handle action button clicks
+            $('.action-btn').on('click', function() {
+                currentRestaurantKey = $(this).data('restaurant-key');
+                currentEventId = $(this).data('event-id');
+                currentExecutionId = $(this).data('execution-id');
+                currentActionName = $(this).data('action-name');
+                const eventName = $(this).data('event-name');
+
+                $('#modalActionName').text(currentActionName);
+                $('#modalEventName').text(eventName);
+
+                $('#actionModal').modal('show');
+            });
+
+            // Handle execute action button
+            $('#executeActionBtn').on('click', function() {
+                if (!currentRestaurantKey || !currentEventId || !currentActionName) return;
+
+                const btn = $(this);
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Executing...');
+
+                $.ajax({
+                    url: '@Url.Action("ExecuteAction", "RestaurantEvents")',
+                    type: 'POST',
+                    data: {
+                        restaurantKey: currentRestaurantKey,
+                        eventId: currentEventId,
+                        actionName: currentActionName
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#actionModal').modal('hide');
+
+                            // Show success toast and reload
+                            //alert('Success: ' + response.message);
+                            showToast(response.message);
+
+                            location.reload();
+                        }
+                    },
+                    error: function(xhr) {
+                        showToast('Error executing action. Please try again.');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).text('Execute');
+                    }
+                });
+            });
+
+            // Reset modal when closed
+            $('#actionModal').on('hidden.bs.modal', function() {
+                currentRestaurantKey = null;
+                currentEventId = null;
+                currentExecutionId = null;
+                currentActionName = null;
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .card {
+            border: none;
+            border-radius: 8px;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+            .table tbody tr:hover:not(.table-success-subtle) {
+                background-color: #f8f9fa;
+            }
+
+        .action-btn {
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+            .action-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+        .badge {
+            padding: 0.35em 0.65em;
+            font-weight: 500;
+        }
+
+        .table-success-subtle {
+            background-color: rgba(25, 135, 84, 0.05);
+        }
+
+        .progress {
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+    </style>
+    <style>
+        .card {
+            border: none;
+            border-radius: 8px;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+            .table tbody tr:hover {
+                background-color: #f8f9fa;
+            }
+
+        /* RAG Squares */
+        .rag-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .rag-square {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+            .rag-square:hover {
+                transform: scale(1.2);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                z-index: 10;
+            }
+
+            .rag-square.rag-green {
+                background-color: #28a745;
+            }
+
+            .rag-square.rag-amber {
+                background-color: #ffc107;
+            }
+
+            .rag-square.rag-red {
+                background-color: #dc3545;
+            }
+
+        .btn-sm {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+        }
+
+        .badge {
+            padding: 0.35em 0.65em;
+            font-weight: 500;
+        }
+    </style>
+}

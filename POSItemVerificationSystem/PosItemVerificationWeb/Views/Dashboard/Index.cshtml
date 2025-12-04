@@ -1,0 +1,173 @@
+﻿@{
+    ViewData["Title"] = "Dashboard Reports";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model SqlQueryResult
+
+<link href="~/lib/tabulator-6.3.1/dist/css/tabulator.min.css" rel="stylesheet" />
+
+@section Styles {
+    <style>
+        .rag-red {
+            background-color: #ffcccc !important;
+            color: #900 !important;
+            font-weight: bold;
+        }
+
+        .rag-amber {
+            background-color: #fff0b3 !important;
+            color: #996600 !important;
+            font-weight: bold;
+        }
+
+        .rag-green {
+            background-color: #ccffcc !important;
+            color: #006600 !important;
+            font-weight: bold;
+        }
+    </style>
+}
+
+<div class="container mt-4">
+
+    <h3>Dashboard Reports</h3>
+
+    <div class="form-group mb-3">
+        <select id="serverSelect" class="form-control">
+            <option value="">-- Select Server --</option>
+            @foreach (var s in Model.ServerConnections)
+            {
+                <option value="@s">@s</option>
+            }
+        </select>
+
+        <label>Select Dashboard Script:</label>
+        <select id="scriptSelect" class="form-control">
+            <option value="">-- Select Script --</option>
+            @foreach (var s in Model.AvailableScripts)
+            {
+                <option value="@s.ScriptName">@s.DisplayName</option>
+            }
+        </select>
+    </div>
+
+    <button id="runScript" class="btn btn-primary mb-3">Run Report</button>
+
+    <div id="error" class="alert alert-danger mt-3 d-none"></div>
+    <button id="exportExcel" class="btn btn-success mb-3">
+    <i class="fa fa-file-excel"></i> Export to Excel
+</button>
+
+    <div id="table-container" class="mt-4" style="height: 80vh;"></div>
+
+</div>
+
+@section Scripts {
+    <script src="~/lib/tabulator-6.3.1/dist/js/tabulator.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <script>
+            $("#exportExcel").click(function () {
+        if (!window.table) {
+            alert("No data loaded.");
+            return;
+        }
+
+        window.table.download("xlsx", "Report.xlsx", {
+            sheetName: "ReportData"
+        });
+    });
+
+
+        $("#runScript").click(function () {
+            debugger;
+            $("#error").addClass("d-none");
+            $("#table-container").html("");
+
+            let scriptName = $("#scriptSelect").val();
+            if (!scriptName) {
+                $("#error").text("Please select a report script.").removeClass("d-none");
+                return;
+            }
+
+                    let serverName = $("#serverSelect").val();
+
+        if (!serverName) {
+            $("#error").text("Please select a server.").removeClass("d-none");
+            return;
+        }
+
+
+                function ragFormatter(cell) {
+            const value = (cell.getValue() || "").toString().toLowerCase();
+
+            cell.getElement().classList.remove("rag-red", "rag-amber", "rag-green");
+
+            if (value.includes("red")) {
+                cell.getElement().classList.add("rag-red");
+            } else if (value.includes("amber")) {
+                cell.getElement().classList.add("rag-amber");
+            } else if (value.includes("green")) {
+                cell.getElement().classList.add("rag-green");
+            }
+
+            return cell.getValue();
+        }
+
+
+
+
+
+
+
+        $.ajax({
+            type: "POST",
+            url: "@Url.Action("Index")",
+            data: {
+                ScriptName: scriptName,
+                ServerName: serverName   // <-- ADD THIS
+            },
+
+                success: function (data) {
+                    if (data.error) {
+                        $("#error").text(data.error).removeClass("d-none");
+                        return;
+                    }
+
+                    if (window.table) window.table.destroy();
+
+
+
+                    const columns = data.columns.map(col => {
+            let columnDef = {
+                title: col.title,
+                field: col.field,
+                headerFilter: "input"
+            };
+
+            // Apply RAG formatter automatically
+            if (col.title.toLowerCase() === "rag") {
+                columnDef.formatter = ragFormatter;
+            }
+
+                        return columnDef;
+                     });
+
+                    window.table = new Tabulator("#table-container", {
+                        data: data.rows,
+                        columns: columns,
+                        layout: "fitDataStretch",
+                        pagination: true,
+                        paginationSize: 25,
+                        paginationSizeSelector: [10, 25, 50, 100],
+                        placeholder: "No results found",
+                        height: "100%"
+                    });
+                },
+                error: function (xhr) {
+                    $("#error").text("Error: " + xhr.statusText).removeClass("d-none");
+                }
+            });
+        });
+    </script>
+}

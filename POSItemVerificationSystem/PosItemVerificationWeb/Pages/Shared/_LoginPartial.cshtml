@@ -1,0 +1,18 @@
+﻿<ul class="navbar-nav">
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <li class="nav-item">
+            <span class="navbar-text text-dark px-3">
+                <i class="fas fa-user"></i> Hello, @User.Identity.Name!
+            </span>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <span class="navbar-text text-muted px-3">
+                Not authenticated
+            </span>
+        </li>
+    }
+</ul>

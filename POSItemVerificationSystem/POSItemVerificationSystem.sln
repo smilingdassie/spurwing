@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PosItemVerificationWeb", "PosItemVerificationWeb\PosItemVerificationWeb.csproj", "{16544764-2D1F-42C0-A7D0-EC52A5755F77}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PLUWindowsLogin", "PLUWindowsLogin\PLUWindowsLogin.csproj", "{F427D568-7C05-491E-A76A-B2C756292066}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLLargeInsert", "SQLLargeInsert\SQLLargeInsert.csproj", "{D8A7CB8E-3CD9-4496-9094-B50BC9830398}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLRawToMongoDb", "SQLRawToMongoDb\SQLRawToMongoDb.csproj", "{5834E399-772B-40EB-94C8-D5FD367FB50B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResendEmailApi", "ResendEmailApi\ResendEmailApi.csproj", "{4B102166-2816-C86A-44DA-D17AB061464E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResendEmailApi.Tests", "ResendEmailApi.Tests\ResendEmailApi.Tests.csproj", "{6898F634-0078-1748-8211-67C29F624B16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{16544764-2D1F-42C0-A7D0-EC52A5755F77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16544764-2D1F-42C0-A7D0-EC52A5755F77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16544764-2D1F-42C0-A7D0-EC52A5755F77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16544764-2D1F-42C0-A7D0-EC52A5755F77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F427D568-7C05-491E-A76A-B2C756292066}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F427D568-7C05-491E-A76A-B2C756292066}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F427D568-7C05-491E-A76A-B2C756292066}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F427D568-7C05-491E-A76A-B2C756292066}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8A7CB8E-3CD9-4496-9094-B50BC9830398}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8A7CB8E-3CD9-4496-9094-B50BC9830398}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8A7CB8E-3CD9-4496-9094-B50BC9830398}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8A7CB8E-3CD9-4496-9094-B50BC9830398}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5834E399-772B-40EB-94C8-D5FD367FB50B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5834E399-772B-40EB-94C8-D5FD367FB50B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5834E399-772B-40EB-94C8-D5FD367FB50B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5834E399-772B-40EB-94C8-D5FD367FB50B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B102166-2816-C86A-44DA-D17AB061464E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B102166-2816-C86A-44DA-D17AB061464E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B102166-2816-C86A-44DA-D17AB061464E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B102166-2816-C86A-44DA-D17AB061464E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6898F634-0078-1748-8211-67C29F624B16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6898F634-0078-1748-8211-67C29F624B16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6898F634-0078-1748-8211-67C29F624B16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6898F634-0078-1748-8211-67C29F624B16}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FFEE0475-60CC-4380-947D-368204BCFBDB}
+	EndGlobalSection
+EndGlobal
